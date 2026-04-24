@@ -1,56 +1,28 @@
-// 
+import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 
-
-import { openai } from "@ai-sdk/openai";
-import { frontendTools } from "@assistant-ui/react-ai-sdk";
-import {
-  JSONSchema7,
-  streamText,
-  convertToModelMessages,
-  type UIMessage,
-} from "ai";
+const groq = createOpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
+});
 
 export async function POST(req: Request) {
   try {
-    const {
-      messages,
-      system,
-      tools,
-    }: {
-      messages: UIMessage[];
-      system?: string;
-      tools?: Record<string, { description?: string; parameters: JSONSchema7 }>;
-    } = await req.json();
+    console.log("🔥 API HIT");
 
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: "messages must be an array" }), { status: 400 });
-    }
+    const { messages }: { messages: UIMessage[] } = await req.json();
 
     const result = streamText({
-      model: openai.responses("gpt-5-nano"),
+      model: groq("llama-3.1-8b-instant"), // ✅ FIXED
       messages: await convertToModelMessages(messages),
-      system,
-      tools: {
-        ...frontendTools(tools ?? {}),
-      },
-      providerOptions: {
-        openai: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-        },
-      },
     });
 
-    return result.toUIMessageStreamResponse({ sendReasoning: true });
+    return result.toUIMessageStreamResponse();
   } catch (err) {
-    console.error("API Error:", err);
+    console.error(err);
+
     return new Response(
-      JSON.stringify({
-        type: "error",
-        code: "internal_error",
-        message: "Internal server error",
-        param: null,
-      }),
+      JSON.stringify({ error: "Groq API failed" }),
       { status: 500 }
     );
   }
