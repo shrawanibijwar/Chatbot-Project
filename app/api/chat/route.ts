@@ -1,9 +1,8 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGroq } from "@ai-sdk/groq";
 
-const groq = createOpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY!,
 });
 
 export async function POST(req: Request) {
@@ -13,7 +12,7 @@ export async function POST(req: Request) {
     const { messages }: { messages: UIMessage[] } = await req.json();
 
     const result = streamText({
-      model: groq("llama-3.1-8b-instant"), // ✅ FIXED
+      model: groq("llama-3.1-8b-instant"),
       messages: await convertToModelMessages(messages),
     });
 
